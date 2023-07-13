@@ -36,8 +36,12 @@ def get_reduced_matrices():
             status1 = station_status[idx1]
             status2 = station_status[idx2]
 
+            if (idx1 not in walking_time_data) and (idx1 not in cycling_time_data):
+                print(idx1)
+            elif (idx2 not in walking_time_data[idx1]) and (idx2 not in cycling_time_data[idx1]):
+                print(idx1,idx2)
             # Fill matrices according to the given rules
-            if status1 == 'give' and status2 in ['take', 'neutral']:
+            elif status1 == 'give' and status2 in ['take', 'neutral']:
                 times_matrix[idx1][idx2] = cycling_time_data[idx1][idx2]
                 values_matrix[idx1][idx2] = station_points[idx1] + station_points[idx2]
             elif status1 == 'take' and status2 in ['give', 'neutral']:
@@ -50,9 +54,9 @@ def get_reduced_matrices():
                 elif status2 == 'give':
                     times_matrix[idx1][idx2] = walking_time_data[idx1][idx2]
                     values_matrix[idx1][idx2] = 0
-                elif status2 == 'neutral' and idx1 != idx2:
-                    times_matrix[idx1][idx2] = cycling_time_data[idx1][idx2]
-                    values_matrix[idx1][idx2] = station_points[idx1] + station_points[idx2]
+                # elif status2 == 'neutral' and idx1 != idx2:
+                #     times_matrix[idx1][idx2] = cycling_time_data[idx1][idx2]
+                #     values_matrix[idx1][idx2] = station_points[idx1] + station_points[idx2]
 
     # Save the matrices to JSON files
     with open('reduced_times_matrix.json', 'w') as f:

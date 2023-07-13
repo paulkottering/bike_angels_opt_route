@@ -1,9 +1,12 @@
 from get_reduced_matrices import get_reduced_matrices
 from dynamic_program import dynamic_program
+from dynamic_program_no_repeat import dynamic_program_no_repeat
 import json
 import requests
 import streamlit as st
 import pandas as pd
+import pydeck as pdk
+
 
 @st.cache(allow_output_mutation=True)
 def load_data():
@@ -60,6 +63,8 @@ with st.form(key='stations_form'):
 
     T = st.slider('Select maximum cycling time (in minutes):', min_value=0, max_value=60, step=1)
 
+    multi = st.checkbox("Visit Stations Multiple Times?",value=False)
+
     submit_time_button = st.form_submit_button(label='Submit')
 
 if submit_time_button:
@@ -103,29 +108,106 @@ if submit_time_button:
     print(f"Beginning station: {start_station_name}")
     print(f"End station: {end_station_name}")
 
-    # Call the function with the selected stations
-    path = dynamic_program(start_station_id, end_station_id, T)
 
-    # Create a list of dictionaries for the table
+    # Call the function with the selected stations
+    if multi:
+        path,total_points = dynamic_program(start_station_id, end_station_id, T)
+    else:
+        path,total_points = dynamic_program_no_repeat(start_station_id, end_station_id, T)
+
+    # Create a list of dictionaries for the table and map
     table_data = []
+    map_walk_data = []
+    map_cycle_data = []
+    point_data = []
+
     for step in path:
         row = {
             'From Station': step['from_station'],
             'To Station': step['to_station'],
+            'From Station Mode': step['from_station_mode'],
+            'To Station Moe': step['to_station_mode'],
             'Time (minutes)': step['time'],
             'Mode': step['mode'],
             'Points': step['points'],
         }
+        coords_dict = {
+            'start_lat': step['from_station_lat'],
+            'start_lon': step['from_station_lon'],
+            'end_lat': step['to_station_lat'],
+            'end_lon': step['to_station_lon'],
+            'mode': step['mode']
+        }
+        point_dict = {
+            'lat': step['from_station_lat'],
+            'lon': step['from_station_lon'],
+        }
         table_data.append(row)
+        if step['mode'] == 'walk':
+            map_walk_data.append(coords_dict)
+        else:
+            map_cycle_data.append(coords_dict)
+
+        point_data.append(point_dict)
 
     # Display the table
     st.table(table_data)
 
-    # Create a DataFrame for the map
-    map_data = pd.DataFrame({
-        'lat': [step['from_station_lat'] for step in path] + [step['to_station_lat'] for step in path],
-        'lon': [step['from_station_lon'] for step in path] + [step['to_station_lon'] for step in path],
-    })
+    st.write(f"The total points is: {total_points}.")
 
-    # Display the map
-    st.map(map_data)
+    # Create DataFrames for the map
+    map_walk_df = pd.DataFrame(map_walk_data)
+    map_cycle_df = pd.DataFrame(map_cycle_data)
+    point_df = pd.DataFrame(point_data)
+
+
+    # Define color function
+    def get_color(mode):
+        return [0, 0, 255] if mode == 'walking' else [255, 0, 0]
+
+
+    # Define line layer
+    line_walk_layer = pdk.Layer(
+        'LineLayer',
+        map_walk_df,
+        get_source_position=['start_lon', 'start_lat'],
+        get_target_position=['end_lon', 'end_lat'],
+        get_width=5,
+        get_color=[255, 0, 0],
+        pickable=True,
+        auto_highlight=True
+    )
+
+    line_cycle_layer = pdk.Layer(
+        'LineLayer',
+        map_cycle_df,
+        get_source_position=['start_lon', 'start_lat'],
+        get_target_position=['end_lon', 'end_lat'],
+        get_width=5,
+        get_color=[255, 100, 0],
+        pickable=True,
+        auto_highlight=True
+    )
+
+    # Define point layer
+    point_layer = pdk.Layer(
+        'ScatterplotLayer',
+        point_df,
+        get_position=['lon', 'lat'],
+        get_radius=10,  # Adjust size of points
+        get_fill_color=[0, 255, 0],  # Set color of points
+        pickable=True,
+        auto_highlight=True
+    )
+
+    # Define initial viewport
+    view_state = pdk.ViewState(
+        latitude=map_cycle_df['start_lat'].mean(),
+        longitude=map_cycle_df['start_lon'].mean(),
+        zoom=12
+    )
+
+    # Create deck.gl map
+    r = pdk.Deck(layers=[line_walk_layer,line_cycle_layer,point_layer], initial_view_state=view_state)
+    st.pydeck_chart(r)
+    print('hoo')

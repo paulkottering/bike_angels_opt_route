@@ -5,7 +5,6 @@ def get_filtered_bike_stations():
     url = "https://layer.bicyclesharing.net/map/v1/nyc/stations"
     r = requests.get(url)
     data = r.json()
-    print('hmm')
     filtered_data = {"stations": []}
 
     for feature in data['features']:

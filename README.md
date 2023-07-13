@@ -4,7 +4,7 @@ This repository contains a Python program using the Streamlit library for routin
 
 ## Main Function
 
-The primary calling function of the program is `main.py`, which integrates various modules to provide the functionality of the app. It fetches the real-time data of the Bike Angels stations in NYC and provides a user interface for inputting the start and end stations and the maximum cycling time. It then processes the data and calls the dynamic programming function to suggest the optimal route.
+The primary calling function of the program is `call.py`, which integrates various modules to provide the functionality of the app. It fetches the real-time data of the Bike Angels stations in NYC and provides a user interface for inputting the start and end stations and the maximum cycling time. It then processes the data and calls the dynamic programming function to suggest the optimal route.
 
 ## Prerequisites
 
@@ -22,7 +22,7 @@ Please ensure these are installed in your Python environment.
 You can run the program by calling Streamlit with the main file:
 
 ```
-streamlit run main.py
+streamlit run call.py
 ```
 
 The program will launch a new web page where you can interact with the program. 

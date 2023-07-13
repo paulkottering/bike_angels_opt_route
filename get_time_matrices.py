@@ -6,11 +6,11 @@ import requests
 def calculate_distance(coord1, coord2):
     lon1, lat1 = coord1
     lon2, lat2 = coord2
-    return math.sqrt((lon2 - lon1)**2 + (lat2 - lat1)**2) * 111.045
+    return math.sqrt(((lon2 - lon1)*85)**2 + ((lat2 - lat1)*111)**2)
 
 # Define speeds
 cycling_speed_kmph = 10
-walking_speed_kmph = 3
+walking_speed_kmph = 4
 
 def get_full_time_matrices():
 
@@ -58,8 +58,8 @@ def get_full_time_matrices():
         walking_time_matrix[id1] = {}
         for id2 in station_id_list:
             distance = calculate_distance(station_coords[id1], station_coords[id2]) # in km
-            cycling_time_matrix[id1][id2] = int(60*distance / cycling_speed_kmph+1) # in hours
-            walking_time_matrix[id1][id2] = int(60*distance / walking_speed_kmph+1) # in hours
+            cycling_time_matrix[id1][id2] = max(1,int(60*distance / cycling_speed_kmph)) # in hours
+            walking_time_matrix[id1][id2] = max(1,int(60*distance / walking_speed_kmph)) # in hours
 
     # Save the matrices to JSON files
     with open('cycling_time_matrix.json', 'w') as f:
